@@ -2,7 +2,7 @@ name: Scrape BGL Prices
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/3 * * * *"
   workflow_dispatch: {}
 
 permissions:
