@@ -2,11 +2,8 @@ name: Scrape BGL Prices
 
 on:
   schedule:
-    # Setiap 30 menit. Catatan: GitHub Actions cron TIDAK dijamin presisi -
-    # sering delay 5-15 menit lagi saat traffic tinggi. Jangan set lebih
-    # rapat dari 15 menit, GitHub akan throttle/drop run-nya.
     - cron: "*/30 * * * *"
-  workflow_dispatch: {}   # bisa dijalankan manual dari tab Actions
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -23,7 +20,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # perlu history penuh untuk `git show origin/main:...`
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -71,8 +68,6 @@ jobs:
             python scraper/merge_data.py history /tmp/local_history.json /tmp/remote_history.json data/history.json
             python scraper/merge_data.py summary /tmp/local_summary.json /tmp/remote_summary.json data/summary.json
 
-            # Reset branch ke origin/main lalu commit ulang hasil merge di atasnya,
-            # supaya jadi fast-forward terhadap remote.
             git reset --soft origin/main
             git add data/history.json data/summary.json
             git commit -m "chore: merge harga BGL (auto-resolve race) $(date -u '+%Y-%m-%d %H:%M UTC')"
