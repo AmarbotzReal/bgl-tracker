@@ -5,19 +5,7 @@ merge_data.py
 Dipanggil oleh workflow saat `git push` ditolak (non-fast-forward) karena ada
 run lain yang lebih dulu push. Alih-alih mengandalkan git merge tekstual pada
 file JSON (yang gampang conflict karena urutan/isi array berubah), script ini
-melakukan UNION yang paham struktur data:
-
-- data/history.json: dict {product_id: [ {timestamp, price, source}, ... ]}
-  -> gabungkan list per product_id, dedup berdasarkan (timestamp, price, source),
-     lalu urutkan berdasarkan timestamp.
-- data/summary.json: list [ {timestamp, min, max, avg, detail}, ... ]
-  -> gabungkan, dedup berdasarkan timestamp, urutkan berdasarkan timestamp.
-
-Karena tiap run hanya MENAMBAH entri baru (tidak pernah mengubah entri lama),
-union semacam ini aman dan idempotent tidak peduli urutan proses.
-
-Pemakaian:
-    python scraper/merge_data.py <path_ke_versi_local> <path_ke_versi_remote> <path_output>
+melakukan UNION yang paham struktur data.
 """
 
 import json
