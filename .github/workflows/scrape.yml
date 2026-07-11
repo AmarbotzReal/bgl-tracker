@@ -33,7 +33,7 @@ jobs:
       - name: Jalankan scraper
         run: python scraper/scrape.py
         env:
-          DEBUG_DUMP: "0"
+          DEBUG_DUMP: "1"
 
       - name: Commit & push (dengan smart-merge kalau ada konflik)
         run: |
