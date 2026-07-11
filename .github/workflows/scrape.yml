@@ -1,0 +1,49 @@
+name: Scrape BGL Prices
+
+on:
+  schedule:
+    # Setiap 30 menit. Catatan: GitHub Actions cron TIDAK dijamin presisi -
+    # sering delay 5-15 menit lagi saat traffic tinggi. Jangan set lebih
+    # rapat dari 15 menit, GitHub akan throttle/drop run-nya.
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}   # bisa dijalankan manual dari tab Actions
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bgl-scraper
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Jalankan scraper
+        run: python scraper/scrape.py
+        env:
+          DEBUG_DUMP: "0"
+
+      - name: Commit & push data terbaru
+        run: |
+          git config user.name "bgl-price-bot"
+          git config user.email "bgl-price-bot@users.noreply.github.com"
+          git add data/history.json data/summary.json
+          if git diff --cached --quiet; then
+            echo "Tidak ada perubahan data, skip commit."
+          else
+            git commit -m "chore: update harga BGL $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git pull --rebase origin main
+            git push origin main
+          fi
