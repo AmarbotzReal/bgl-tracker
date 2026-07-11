@@ -23,27 +23,62 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0   # perlu history penuh untuk `git show origin/main:...`
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
+      - name: Ambil data terbaru dulu (kurangi jendela race)
+        run: git pull --ff-only origin main
+
       - name: Jalankan scraper
         run: python scraper/scrape.py
         env:
           DEBUG_DUMP: "0"
 
-      - name: Commit & push data terbaru
+      - name: Commit & push (dengan smart-merge kalau ada konflik)
         run: |
           git config user.name "bgl-price-bot"
           git config user.email "bgl-price-bot@users.noreply.github.com"
+
           git add data/history.json data/summary.json
           if git diff --cached --quiet; then
             echo "Tidak ada perubahan data, skip commit."
-          else
-            git commit -m "chore: update harga BGL $(date -u '+%Y-%m-%d %H:%M UTC')"
-            git pull --rebase origin main
-            git push origin main
+            exit 0
           fi
+
+          git commit -m "chore: update harga BGL $(date -u '+%Y-%m-%d %H:%M UTC')"
+
+          MAX_TRIES=5
+          for i in $(seq 1 $MAX_TRIES); do
+            if git push origin main; then
+              echo "Push berhasil pada percobaan $i."
+              exit 0
+            fi
+
+            echo "Push ditolak (percobaan $i/$MAX_TRIES) - kemungkinan run lain sudah push duluan."
+            echo "Mengambil versi remote & menggabungkan data secara terstruktur (union, bukan git text-merge)..."
+
+            git fetch origin main
+
+            git show HEAD:data/history.json       > /tmp/local_history.json
+            git show HEAD:data/summary.json        > /tmp/local_summary.json
+            git show origin/main:data/history.json > /tmp/remote_history.json
+            git show origin/main:data/summary.json > /tmp/remote_summary.json
+
+            python scraper/merge_data.py history /tmp/local_history.json /tmp/remote_history.json data/history.json
+            python scraper/merge_data.py summary /tmp/local_summary.json /tmp/remote_summary.json data/summary.json
+
+            # Reset branch ke origin/main lalu commit ulang hasil merge di atasnya,
+            # supaya jadi fast-forward terhadap remote.
+            git reset --soft origin/main
+            git add data/history.json data/summary.json
+            git commit -m "chore: merge harga BGL (auto-resolve race) $(date -u '+%Y-%m-%d %H:%M UTC')"
+
+            sleep $(( (RANDOM % 10) + 3 ))
+          done
+
+          echo "Gagal push setelah $MAX_TRIES percobaan." >&2
+          exit 1
