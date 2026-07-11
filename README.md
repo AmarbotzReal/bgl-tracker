@@ -63,6 +63,30 @@ bgl-tracker/
    tiap 5 menit di sisi browser (data sumbernya sendiri baru berubah
    sesuai jadwal Actions kamu).
 
+## Kalau kamu sempat lihat error "CONFLICT (content): Merge conflict in data/history.json"
+
+Ini terjadi kalau ada 2 run yang overlap (misalnya kamu klik "Run workflow"
+manual persis saat jadwal cron juga jalan) — dua-duanya sama-sama mencoba
+push ke file JSON yang sama, dan `git merge`/`rebase` biasa tidak tahu cara
+menggabungkan isi array JSON secara aman.
+
+**Sudah diperbaiki** di `.github/workflows/scrape.yml` versi ini:
+- Sebelum scraping, workflow narik data terbaru dulu (`git pull --ff-only`)
+  supaya jendela racenya kecil.
+- Kalau tetap ada run lain yang keduluan push, workflow **tidak** memakai
+  `git rebase`/`git merge` mentah. Sebaliknya dia memanggil
+  `scraper/merge_data.py`, yang menggabungkan (union) isi
+  `history.json`/`summary.json` versi lokal & remote berdasarkan
+  `timestamp` + dedup, lalu commit ulang di atas versi remote terbaru.
+  Ini aman karena tiap run **hanya menambah** entri baru, tidak pernah
+  mengubah entri lama — jadi union semacam ini tidak mungkin kehilangan data.
+- Kalau masih gagal, dicoba ulang sampai 5x dengan jeda acak singkat.
+
+Kalau repo kamu sudah terlanjur ada konflik manual yang belum selesai
+(state rebase nyangkut), paling gampang: jalankan `git rebase --abort` di
+lokal, atau langsung ganti `.github/workflows/scrape.yml` dan
+`scraper/merge_data.py` dengan versi terbaru ini lalu push ulang.
+
 ## Cara kerja singkat
 
 - **Penyimpanan**: bukan database terpisah — cukup file JSON yang di-commit
