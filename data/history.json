@@ -94,6 +94,11 @@
       "timestamp": "2026-07-12T02:51:27.147967+07:00",
       "price": 243,
       "source": "regex_json"
+    },
+    {
+      "timestamp": "2026-07-12T03:42:38.542149+07:00",
+      "price": 243,
+      "source": "regex_json"
     }
   ],
   "2453334": [
@@ -191,6 +196,11 @@
       "timestamp": "2026-07-12T02:51:27.147967+07:00",
       "price": 243,
       "source": "regex_json"
+    },
+    {
+      "timestamp": "2026-07-12T03:42:38.542149+07:00",
+      "price": 243,
+      "source": "regex_json"
     }
   ],
   "2133494": [
@@ -286,6 +296,11 @@
     },
     {
       "timestamp": "2026-07-12T02:51:27.147967+07:00",
+      "price": 243,
+      "source": "regex_json"
+    },
+    {
+      "timestamp": "2026-07-12T03:42:38.542149+07:00",
       "price": 243,
       "source": "regex_json"
     }
